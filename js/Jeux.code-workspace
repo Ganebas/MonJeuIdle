@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../site"
+		},
+		{
+			"path": "../../../../Downloads/AutoClickerExample-master"
+		},
+		{
+			"path": "../../../site/site2"
+		},
+		{
+			"path": "../../../site/site3"
+		},
+		{
+			"path": "../../../site/ald-concept-web"
+		},
+		{
+			"path": "../../../site/ald-concept"
+		},
+		{
+			"path": "../../../site/site4"
+		},
+		{
+			"path": "../../../site/teste"
+		},
+		{
+			"path": "../../../Ganebas"
+		},
+		{
+			"path": "../../../Amusement hack"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "Jeux"
+	}
+}

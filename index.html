@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Jeu Idle Pro - Base Saine</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="currency-header">
+        <div class="currency-block" id="resources-block"><div class="currency-icon">💰</div><div class="currency-info"><div class="currency-value" id="currency-ressources">0</div><div class="currency-label">Ressources</div></div></div>
+        <div class="currency-block" id="gems-block"><div class="currency-icon">💎</div><div class="currency-info"><div class="currency-value" id="gems-count">0</div><div class="currency-label">Gemmes</div></div></div>
+        <div class="currency-block" id="dm-block" style="display:none; border-color: var(--accent-purple);"><div class="currency-icon">🌌</div><div class="currency-info"><div class="currency-value" id="dm-count" style="color: var(--accent-purple);">0</div><div class="currency-label">Matière Noire</div></div></div>
+    </div>
+
+    <div id="crash-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:white; color:red; z-index:999999; padding:50px; overflow:auto;">
+        <h1 style="font-size:3rem; margin-bottom:20px;">CRASH DU JEU</h1>
+        <div id="crash-message" style="font-family:monospace; font-size:1.2rem; background:#eee; padding:20px; border:2px solid red; color:black;"></div>
+        <button onclick="localStorage.clear(); location.reload();" style="margin-top:30px; padding:20px 40px; font-size:1.5rem; background:red; color:white; border:none; cursor:pointer;">FORCER LA RÉINITIALISATION</button>
+    </div>
+
+    <div id="offline-modal" class="modal-overlay hidden"><div class="modal-content"><h2>🌍 Bon Retour !</h2><p style="margin: 15px 0; color: var(--text-muted);">Pendant votre absence de <span id="offline-time"></span>,</p><div id="offline-gains" class="score-number" style="font-size: 2.5rem; margin: 15px 0;">0</div><button class="settings-btn" style="background: var(--accent-green); border-color: #28a01f; font-size: 1.2rem; padding: 15px 30px; margin-top: 15px;" onclick="closeOfflineModal()">Encaisser</button></div></div>
+    <div id="victory-modal" class="modal-overlay hidden" style="z-index: 50000; background: rgba(0,0,0,0.9); color: var(--highlight-yellow);"><div class="modal-content" style="background: transparent; border: none; box-shadow: none; max-width: 800px; text-align:center;"><h1 style="font-size: 4rem; color: var(--highlight-yellow); text-shadow: 0 0 20px #ff9100; margin-bottom: 20px;">VICTOIRE !</h1><p style="font-size: 1.2rem; margin: 20px 0; color:var(--text-main);">L'univers s'effondre pour renaître.</p><div style="font-size: 3rem; color: #f5f6fa; font-weight:bold; text-shadow: 0 0 10px #fff;">+ <span id="dm-gained">0</span> Matière Noire 🌌</div><button class="settings-btn" style="background: var(--accent-purple); border-color: #831d96; font-size: 1.2rem; padding: 15px 30px; margin-top: 30px; color:white;" onclick="document.getElementById('victory-modal').classList.add('hidden')">Fermer</button></div></div>
+    <div id="tutorial-modal" class="modal-overlay hidden" style="z-index: 60000;">
+        <div class="modal-content" style="border-color: var(--accent-blue-light);">
+            <h2 style="color:var(--accent-blue-light); margin-bottom: 15px;">👋 Bienvenue, Mendiant Galactique !</h2>
+            <p style="color:var(--text-main); font-size:1.1rem; margin-bottom:10px;">L'univers est à vous, mais vous partez de zéro.</p>
+            <ul style="text-align:left; color:var(--text-muted); font-size:0.95rem; margin-bottom:20px; line-height:1.6; padding-left: 20px;">
+                <li>🔴 <b>Étape 1 :</b> Cliquez sur le gros bouton rouge à gauche pour extraire vos premières ressources.</li>
+                <li>🛒 <b>Étape 2 :</b> Achetez des bâtiments (Curseurs, Grand-Mères) dans le Magasin pour automatiser la production.</li>
+                <li>🌌 <b>Étape 3 :</b> Quand la progression ralentit, utilisez l'<b>Ascension</b> pour recommencer avec des bonus surpuissants !</li>
+            </ul>
+            <button class="metamorphose-buy-btn" style="background:var(--accent-blue-light); border-color:#0097e6; color:white;" onclick="closeTutorial()">C'est parti ! (+100 Cadeau 🎁)</button>
+        </div>
+    </div>
+
+    <div id="save-modal" class="modal-overlay hidden" style="z-index: 60000;">
+        <div class="modal-content" style="border-color: var(--highlight-yellow); width: 500px; max-width: 95%;">
+            <h2 id="save-modal-title" style="color:var(--highlight-yellow); margin-bottom: 15px;">💾 Sauvegarde</h2>
+            <p id="save-modal-desc" style="color:var(--text-main); font-size:1rem; margin-bottom:15px;">Gérez votre fichier de sauvegarde.</p>
+            
+            <textarea id="save-textarea" style="width: 100%; height: 120px; background: var(--bg-dark); color: var(--accent-green); border: 2px solid var(--border-main); border-radius: 8px; padding: 10px; font-family: monospace; resize: none; margin-bottom: 20px; word-break: break-all; outline: none;"></textarea>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-copy-save" class="metamorphose-buy-btn" style="background:var(--accent-blue-light); border-color:#0097e6; color:white; flex:1; display:none;" onclick="copySaveToClipboard()">📋 Copier</button>
+                <button id="btn-apply-save" class="metamorphose-buy-btn" style="background:var(--accent-red); border-color:#c23616; color:white; flex:1; display:none;" onclick="applyImportedSave()">⚠️ Écraser & Charger</button>
+                <button class="metamorphose-buy-btn" style="background:var(--panel-light); border-color:var(--border-main); color:white; flex:1;" onclick="closeSaveModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="news-ticker"><span id="news-text">Flash Info : Le jeu est stabilisé. Prêt pour la nouvelle conversation !</span></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <div id="zone-gauche" class="zone">
+        <div class="score-container">
+            <div id="player-rank" class="rank-text">Mendiant</div>
+            <div id="production" class="score-text" style="font-size: 1.2rem; margin-top: 10px; color:var(--accent-green); font-weight:bold;">0 / sec</div>
+            <div id="click-power" class="score-text" style="font-size: 1rem; margin-top: 5px; color:var(--accent-red);">Clic: +1</div>
+            <div id="weather-box" class="weather-box"><div id="weather-icon">☀️</div><div><div id="weather-name" style="font-weight: bold; color: var(--highlight-yellow);">Ciel Dégagé</div><div id="weather-desc" style="font-size: 0.8rem; color: var(--text-muted);">Production (x1.0)</div></div></div>
+            <div id="garden-buff-ui" style="display:none; margin-top: 10px; background: rgba(76, 209, 55, 0.2); border: 1px solid var(--accent-green); border-radius: 8px; padding: 10px; color:var(--accent-green); font-weight:bold;">🌱 Récolte Active (x2) : <span id="garden-buff-time">0</span>s</div>
+        </div>
+        <div style="position:relative;">
+            <button id="main-click-btn" onclick="doManualClick(event)">CLIQUE !</button>
+            <div id="active-pet-display" class="floating-pet" style="display:none;">🐉</div>
+        </div>
+        <div class="settings-panel">
+            <button id="btn-mute" class="settings-btn" onclick="toggleMute()" style="background: var(--accent-purple); border-color: #831d96;">🔊 Son: ON</button>
+            <button id="btn-music" class="settings-btn" onclick="toggleMusic()">🎵 Musique: OFF</button>
+            <button class="settings-btn" onclick="openExportModal()" style="border-color: var(--accent-blue-light); color: var(--accent-blue-light);">📤 Exporter Save</button>
+            <button class="settings-btn" onclick="openImportModal()" style="border-color: var(--highlight-yellow); color: var(--highlight-yellow);">📥 Importer Save</button>
+            <button class="settings-btn btn-danger" onclick="hardReset()">Hard Reset</button>
+        </div>
+    </div>
+
+    <div id="zone-centre" class="zone">
+        <div id="visual-empire"></div>
+        <div id="golden-bonus" onclick="collectGoldenBonus(event)"></div>
+        <div id="red-event" onclick="clickRedEvent(event)"></div>
+        
+        <div id="prestige-container" style="z-index: 10;">
+            <h3 class="prestige-title" style="color:var(--accent-purple);">Ascension</h3>
+            <div class="prestige-stat">Points de Prestige : <span id="prestige-points-owned" style="color: var(--accent-purple); font-size:1.5rem;">0</span></div>
+            <div class="prestige-stat">Bonus global : <span id="prestige-multiplier" style="color: var(--accent-green);">+0%</span></div>
+            <button id="btn-prestige" class="disabled metamorphose-buy-btn prestige" onclick="doPrestige()" style="margin-top:15px;">Réinitialiser pour <span id="prestige-pending">0</span> pts</button>
+            <div id="faction-container" style="display:none; margin-top: 20px; padding-top:20px; border-top: 2px solid var(--border-main);"><h4 style="color:var(--text-main); margin-bottom:10px;">Choisissez votre Faction :</h4><div style="display:flex; gap:10px; justify-content:center;"><button id="btn-fac-1" class="metamorphose-btn" onclick="joinFaction(1)">⚖️ Marchands<br><small>Prix -20% / Bourse x2</small></button><button id="btn-fac-2" class="metamorphose-btn" onclick="joinFaction(2)">👆 Doigt Musclé<br><small>Clics x5 / Mini-jeu x5</small></button><button id="btn-fac-3" class="metamorphose-btn" onclick="joinFaction(3)">🏗️ Architectes<br><small>Synergies x2 / Mgrs -50%</small></button></div></div>
+            <div id="faction-active" style="display:none; margin-top:15px; color:var(--accent-green); font-weight:bold; font-size:1.2rem;"></div>
+            <div id="transcend-container" style="margin-top: 20px; padding-top:20px; border-top: 2px solid var(--border-main);"><button class="metamorphose-buy-btn prestige" onclick="doTranscend()">🌌 TRANSCENDANCE</button></div>
+        </div>
+
+        <div id="minigame-wrapper" style="z-index: 10; background: var(--panel-deep); padding: 15px; border-radius: 15px; border: 2px solid var(--border-main);">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom: 5px;"><h3 style="color:var(--highlight-yellow); margin:0;">Camp d'Entraînement</h3><span style="color:var(--text-main); font-weight:bold; background:var(--accent-purple); padding:2px 8px; border-radius:5px;">Niv. <span id="mg-level-text">1</span></span></div>
+            <div style="width:100%; height:12px; background:var(--bg-dark); border-radius:6px; overflow:hidden; border:1px solid var(--border-main); margin-bottom:10px; position:relative;"><div id="mg-xp-fill" style="height:100%; background:var(--accent-blue-light); width:0%; transition:width 0.3s;"></div></div>
+            <button id="btn-start-minigame" class="metamorphose-btn" onclick="startMiniGame()" style="background-color: var(--accent-blue-light); border-color: #0097e6; color:white; width:100%;">🎮 Lancer l'Entraînement</button>
+            <div id="minigame-board" class="minigame-board"><div id="minigame-timer">Temps: 10s</div><div id="minigame-hits">Touches: 0</div><div id="minigame-target" onclick="hitMinigameTarget(event)">🎯</div></div>
+            <div id="mg-milestone-track" class="milestone-track"><div class="milestone-line"></div><div class="milestone-icon" id="ms-icon-2" title="Niv 2: Récompenses +50%">🎁</div><div class="milestone-icon" id="ms-icon-5" title="Niv 5: Prod +10%">📈</div><div class="milestone-icon" id="ms-icon-10" title="Niv 10: Temps 15s">⏳</div><div class="milestone-icon" id="ms-icon-15" title="Niv 15: Clic x2">👆</div><div class="milestone-icon" id="ms-icon-20" title="Niv 20: Dégâts Tour x2">⚔️</div></div>
+            <div id="mg-next-milestone" style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); font-weight:bold; text-align:center;">Prochain Jalon : Niv. 2</div>
+        </div>
+
+        <div id="simon-wrapper" style="z-index: 10; background: var(--panel-deep); padding: 15px; border-radius: 15px; border: 2px solid var(--accent-purple); margin-top: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom: 5px;"><h3 style="color:var(--accent-purple); margin:0;">Piratage Galactique</h3><span style="color:var(--text-main); font-weight:bold; background:var(--bg-dark); padding:2px 8px; border-radius:5px; border: 1px solid var(--accent-purple);">Lvl <span id="simon-level">0</span></span></div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 5px; text-align: center;">Mémorisez la séquence pour extraire les données !</p>
+            <div style="font-size:0.8rem; color:var(--highlight-yellow); text-align:center; margin-bottom:15px;">Record actuel : Niv. <span id="simon-max-level">0</span></div>
+            <div id="simon-board" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 160px; margin: 0 auto 15px auto; pointer-events: none; opacity: 0.5;">
+                <div class="simon-btn simon-red" onclick="simonInput(0)"></div><div class="simon-btn simon-blue" onclick="simonInput(1)"></div>
+                <div class="simon-btn simon-green" onclick="simonInput(2)"></div><div class="simon-btn simon-yellow" onclick="simonInput(3)"></div>
+            </div>
+            <button id="btn-start-simon" class="metamorphose-btn" onclick="startSimonGame()" style="background-color: var(--accent-purple); border-color: #831d96; color:white; width:100%;">💻 Lancer le Piratage</button>
+            <div id="simon-status" style="text-align: center; color: var(--highlight-yellow); font-weight: bold; margin-top: 10px; height: 20px;">Terminal en veille</div>
+        </div>
+
+        <div id="achievements-panel" style="z-index: 10;"><h3 style="text-align: center; color: var(--text-muted); font-size: 1.2rem;">Succès (+1% Prod)</h3><div id="achievements-grid" class="achievements-grid"></div></div>
+    </div>
+
+    <div id="zone-droite" class="zone">
+        <div id="tabs-container">
+            <div id="tab-sidebar">
+                <div class="tabs-container-vertical">
+                    <button id="tab-btn-buildings" class="tab-btn active" onclick="switchTab('buildings')">Magasin</button>
+                    <button id="tab-btn-upgrades" class="tab-btn" onclick="switchTab('upgrades')">Amélios</button>
+                    <button id="tab-btn-managers" class="tab-btn" onclick="switchTab('managers')">Bureau</button>
+                    <button id="tab-btn-tower" class="tab-btn" onclick="switchTab('tower')">Tour ⚔️</button>
+                    <button id="tab-btn-hatchery" class="tab-btn" onclick="switchTab('hatchery')">Écloserie 🥚<span id="badge-hatchery" class="notification-badge" style="display:none;">!</span></button>
+                    <button id="tab-btn-expeditions" class="tab-btn" onclick="switchTab('expeditions')">Voyage<span id="badge-expeditions" class="notification-badge" style="display:none;">!</span></button>
+                    <button id="tab-btn-garden" class="tab-btn" onclick="switchTab('garden')">Jardin 🌱<span id="badge-garden" class="notification-badge" style="display:none;">!</span></button>
+                    <button id="tab-btn-market" class="tab-btn" onclick="switchTab('market')">Bourse 📈</button>
+                    <button id="tab-btn-casino" class="tab-btn" onclick="switchTab('casino')">Casino 🎰</button>
+                    <button id="tab-btn-inventory" class="tab-btn" onclick="switchTab('inventory')">Bagage</button>
+                    <button id="tab-btn-skills" class="tab-btn" onclick="switchTab('skills')">Arbre</button>
+                    <button id="tab-btn-dm" class="tab-btn" onclick="switchTab('dm')" style="background:var(--accent-purple); color:white; border-color:var(--accent-purple); display:none;">Matière</button>
+                    <button id="tab-btn-missions" class="tab-btn" onclick="switchTab('missions')">Contrats<span id="badge-missions" class="notification-badge" style="display:none;">!</span></button>
+                    <button id="tab-btn-stats" class="tab-btn" onclick="switchTab('stats')">Stats</button>
+                </div>
+            </div>
+            
+            <div id="tabs-content-area">
+                <div id="tab-buildings" class="tab-content active">
+                    <div class="buy-multipliers">
+                        <span style="color:var(--text-muted); font-size:0.9rem; margin-right: 10px;">Achat par :</span>
+                        <button class="multi-btn active" id="btn-buy-1" onclick="setBuyMultiplier(1)">x1</button>
+                        <button class="multi-btn" id="btn-buy-10" onclick="setBuyMultiplier(10)">x10</button>
+                        <button class="multi-btn" id="btn-buy-100" onclick="setBuyMultiplier(100)">x100</button>
+                        <button class="multi-btn" id="btn-buy-max" onclick="setBuyMultiplier('MAX')">MAX</button>
+                    </div>
+                    <div id="buildings-container"></div>
+                </div>
+
+                <div id="tab-upgrades" class="tab-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <h2 class="section-title" style="margin-bottom:0; border:none;">Améliorations</h2>
+                        <button class="metamorphose-buy-btn" style="width:auto; height:40px; padding:0 20px; font-size:1rem;" onclick="buyAllUpgrades()">Tout Acheter</button>
+                    </div>
+                    <div id="upgrades-container"></div>
+                </div>
+                
+                <div id="tab-managers" class="tab-content"><h2 class="section-title">Bureau des Managers</h2><div id="managers-container"></div></div>
+                <div id="tab-expeditions" class="tab-content"><h2 class="section-title">Expéditions Lointaines</h2><div id="expeditions-container"></div></div>
+                <div id="tab-garden" class="tab-content"><h2 class="section-title">Jardin Botanique</h2><div id="garden-container" class="garden-grid"></div></div>
+                <div id="tab-market" class="tab-content"><h2 class="section-title">Marché Financier</h2><div id="market-container"></div></div>
+                
+                <div id="tab-casino" class="tab-content">
+                    <h2 class="section-title">Le Casino de la Chance</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Misez 1 Gemme pour gagner gros !</p>
+                    <div id="slot-machine" style="background:var(--panel-deep); border: 2px solid var(--highlight-yellow); border-radius: 10px; padding: 20px; text-align:center;">
+                        <div style="display:flex; justify-content:center; gap:15px; font-size:4rem; margin-bottom:20px; background:var(--bg-dark); padding:15px; border-radius:8px; box-shadow:inset 0 0 15px #000;" id="slot-reels"><span id="reel-1">🍒</span><span id="reel-2">💎</span><span id="reel-3">🍀</span></div>
+                        <button class="metamorphose-buy-btn" style="background:var(--highlight-yellow); color:var(--bg-dark); font-size:1.5rem; padding:15px 40px; box-shadow:0 6px 0 #b36400; border-color:#ff9100;" onclick="playSlots()">JOUER (1 💎)</button>
+                        <div id="slot-result" style="margin-top:20px; font-weight:bold; font-size: 1.2rem; height:25px; color:var(--accent-green);"></div>
+                    </div>
+                    <div style="margin-top: 20px; background:var(--panel-deep); padding:15px; border-radius:10px; border: 2px solid var(--border-main);">
+                        <h4 style="color:var(--text-main); margin-bottom: 10px;">Tableau des Gains :</h4>
+                        <ul style="color:var(--text-muted); font-size:1rem; list-style:none; padding-left:0; line-height: 1.8;">
+                            <li>💎💎💎 : Jackpot énorme (+50 Gemmes)</li>
+                            <li>💰💰💰 : L'Heure d'Or (+1h de Production)</li>
+                            <li>🍒🍒🍒 : La Cerise (+5 Gemmes ET 1 Œuf Mystère 🥚)</li>
+                            <li>🍀🍀🍀 : Bénédiction (Nouvel Artefact)</li>
+                            <li>2 symboles identiques : Remboursé (+1 Gemme)</li>
+                        </ul>
+                    </div>
+                    <div style="margin-top:20px; background:var(--panel-deep); border: 2px solid var(--accent-purple); border-radius:10px; padding:20px; text-align:center;">
+                        <h3 style="color:var(--accent-purple); margin-bottom:10px;">Loterie Quotidienne 🎟️</h3>
+                        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Un tirage 100% gagnant toutes les 24 heures !</p>
+                        <button id="btn-daily-lottery" class="metamorphose-buy-btn" style="background:var(--accent-purple); border-color:#831d96; color:white; width:100%; font-size:1.5rem;" onclick="playDailyLottery()">🎟️ Tirer au sort</button>
+                        <div id="lottery-timer" style="margin-top:10px; color:var(--text-muted); font-weight:bold; font-size:1rem; display:none;">Prochain ticket dans : <span id="lottery-time-left" style="color:var(--highlight-yellow);"></span></div>
+                    </div>
+                </div>
+
+                <div id="tab-hatchery" class="tab-content">
+                    <h2 class="section-title">L'Écloserie 🥚</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Incubez vos Œufs. S'il s'agit d'un doublon, le familier monte de niveau !</p>
+                    <div style="background:var(--panel-deep); border: 2px dashed var(--accent-blue-light); border-radius: 15px; padding: 30px; text-align:center; margin-bottom:20px;">
+                        <h3 style="color:var(--accent-blue-light); margin-bottom:10px;">Œufs en stock : <span id="egg-count" style="font-size:2rem; color:var(--text-main);">0</span></h3>
+                        <div id="incubator-ui"></div>
+                    </div>
+                    <h2 class="section-title" style="margin-top: 30px;">Vos Familiers</h2>
+                    <div id="pets-container" class="stats-grid"></div>
+                </div>
+
+                <div id="tab-inventory" class="tab-content"><h2 class="section-title">Inventaire d'Artefacts</h2><div id="equipped-container" class="inventory-slots"></div><h2 class="section-title" style="margin-top: 20px;">Votre Collection</h2><div id="artefacts-container"></div></div>
+                
+                <div id="tab-skills" class="tab-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <h2 class="section-title" style="margin-bottom:0; border:none;">Arbre Technologique</h2>
+                        <button class="settings-btn" style="width:auto; border-color:var(--accent-red); color:var(--accent-red);" onclick="respecSkills()">🔄 Réinitialiser</button>
+                    </div>
+                    <div id="skills-wrapper" style="width: 100%; height: 600px; overflow: hidden; background-color: var(--panel-deep); border: 2px solid var(--border-main); border-radius: 15px; cursor: grab;">
+                        <div id="skills-container" style="position: relative; width: 1200px; height: 1000px; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+                    </div>
+                </div>
+
+                <div id="tab-dm" class="tab-content"><h2 class="section-title" style="color:var(--accent-purple);">Améliorations Cosmiques</h2><div id="dm-upgrades-container"></div></div>
+                <div id="tab-missions" class="tab-content"><h2 class="section-title">Contrats de la Guilde</h2><div style="background: var(--panel-deep); border: 2px solid var(--accent-blue-light); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;"><button class="metamorphose-btn" style="background: var(--accent-blue-light); color:var(--bg-dark); border-color: #0097e6; margin-top: 10px;" onclick="buyTimeWarp()">Saut Temporel (1h) - 5 💎</button></div><h2 class="section-title" style="color:var(--highlight-yellow); margin-top: 30px;">Quêtes Journalières 📅</h2><div id="daily-quests-container" style="margin-bottom: 30px;"></div><h2 class="section-title">Missions Principales</h2><div id="missions-container"></div></div>
+                <div id="tab-missions" class="tab-content">
+                    <h2 class="section-title">Contrats de la Guilde</h2>
+                    <div style="background: var(--panel-deep); border: 2px solid var(--accent-blue-light); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;"><button class="metamorphose-btn" style="background: var(--accent-blue-light); color:var(--bg-dark); border-color: #0097e6; margin-top: 10px;" onclick="buyTimeWarp()">Saut Temporel (1h) - 5 💎</button></div>
+                    
+                    <h2 class="section-title" style="color:var(--highlight-yellow); margin-top: 30px;">Quêtes Journalières 📅</h2>
+                    <div id="daily-quests-container" style="margin-bottom: 30px;"></div>
+                    
+                    <h2 class="section-title">Missions Principales</h2>
+                    <div id="missions-container"></div>
+                </div>
+                <div id="tab-stats" class="tab-content"><h2 class="section-title">Statistiques du Joueur</h2><div id="stats-container" class="stats-grid"></div></div>
+                
+                <div id="tab-tower" class="tab-content">
+                    <h2 class="section-title">La Tour Sans Fin</h2>
+                    <div style="background:var(--panel-deep); border:3px solid var(--accent-red); border-radius:15px; padding:20px; text-align:center;">
+                        <h3 style="color:var(--text-main); font-size:2rem;">Étage <span id="tower-floor">1</span></h3>
+                        <div id="boss-icon" style="font-size:5rem; animation: shake 2s infinite;">👹</div>
+                        <div style="margin-top:15px; background:var(--bg-dark); border-radius:10px; height:30px; width:100%; position:relative; overflow:hidden; border:2px solid var(--border-main);"><div id="boss-hp-fill" style="position:absolute; top:0; left:0; height:100%; width:100%; background:var(--accent-red); transition:width 0.1s linear;"></div><div id="boss-hp-text" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.1rem; text-shadow: 0 0 5px black; z-index:2;">100 / 100</div></div>
+                        <div style="margin-top:10px; background:var(--bg-dark); border-radius:5px; height:15px; width:100%; position:relative; overflow:hidden; border:1px solid var(--accent-blue-light);"><div id="boss-time-fill" style="position:absolute; top:0; left:0; height:100%; width:100%; background:var(--accent-blue-light); transition:width 0.1s linear;"></div><div id="boss-time-text" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.8rem; text-shadow: 0 0 2px black; z-index:2;">30.0s</div></div>
+                        <div style="margin-top:15px; color:var(--accent-green); font-size:1.2rem; font-weight:bold;">DPS Armée : <span id="tower-dps">0</span> /s</div>
+                        <div style="margin-top:5px; color:var(--highlight-yellow); font-size:1rem;">Bonus Actuel : +<span id="tower-bonus">0</span>% Prod Globale</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-area"></div>
+
+    <div id="cloud-save-indicator" style="position: fixed; bottom: 15px; left: 15px; background: rgba(0,0,0,0.7); color: var(--accent-blue-light); padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; border: 2px solid var(--accent-blue-light); opacity: 0; transition: opacity 0.5s; z-index: 99999; pointer-events: none;">☁️ Sauvegarde...</div>
+
+    <script src="js/game.js"></script>
+
+</body>
+</html>
